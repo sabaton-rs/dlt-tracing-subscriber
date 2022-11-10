@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 
 use autoincrement::{AsyncIncremental, AsyncIncrement};
 use tracing::Level;
@@ -74,18 +74,6 @@ impl<S> Layer<S> for DltLayer where S : tracing::Subscriber +  for<'a> LookupSpa
 }
 
 
-/*
-          let dlt_local = dlt_user_log_write_start_id(
-                context.as_mut_ptr(),
-                local_context.as_mut_ptr(),
-                DltLogLevelType::DLT_LOG_ERROR,
-                1234,
-            );
-            let message = CString::new("A Log message").unwrap();
-            dlt_user_log_write_string(local_context.as_mut_ptr(), message.as_ptr());
-            dlt_user_log_write_finish(local_context.as_mut_ptr());    
-*/
-
 struct DltVisitor(DltContextData);
 
 impl DltVisitor {
@@ -127,41 +115,45 @@ impl Drop for DltVisitor {
 
 impl tracing::field::Visit for DltVisitor {
     fn record_f64(&mut self, field: &tracing::field::Field, value: f64) {
-        println!("  field={} value={}", field.name(), &value);
+        //println!("  field={} value={}", field.name(), &value);
         let name=CString::new(field.name()).unwrap();
         unsafe {
+            let eq = CStr::from_bytes_with_nul_unchecked(b"=\0");
             dlt_user_log_write_string(&mut self.0, name.as_ptr());
-            dlt_user_log_write_string(&mut self.0, CString::new("=").unwrap().as_ptr());
+            dlt_user_log_write_string(&mut self.0, eq.as_ptr());
             dlt_user_log_write_float64(&mut self.0, value);
         }
     }
 
     fn record_i64(&mut self, field: &tracing::field::Field, value: i64) {
-        println!("  field={} value={}", field.name(), &value);
+        //println!("  field={} value={}", field.name(), &value);
         let name=CString::new(field.name()).unwrap();
         unsafe {
+            let eq = CStr::from_bytes_with_nul_unchecked(b"=\0");
             dlt_user_log_write_string(&mut self.0, name.as_ptr());
-            dlt_user_log_write_string(&mut self.0, CString::new("=").unwrap().as_ptr());
+            dlt_user_log_write_string(&mut self.0, eq.as_ptr());
             dlt_user_log_write_int64(&mut self.0, value);
         }
     }
 
     fn record_u64(&mut self, field: &tracing::field::Field, value: u64) {
-        println!("  field={} value={}", field.name(), &value);
+        //println!("  field={} value={}", field.name(), &value);
         let name=CString::new(field.name()).unwrap();
         unsafe {
+            let eq = CStr::from_bytes_with_nul_unchecked(b"=\0");
             dlt_user_log_write_string(&mut self.0, name.as_ptr());
-            dlt_user_log_write_string(&mut self.0, CString::new("=").unwrap().as_ptr());
+            dlt_user_log_write_string(&mut self.0, eq.as_ptr());
             dlt_user_log_write_uint64(&mut self.0, value);
         }
     }
 
     fn record_bool(&mut self, field: &tracing::field::Field, value: bool) {
-        println!("  field={} value={}", field.name(), &value);
+        //println!("  field={} value={}", field.name(), &value);
         let name=CString::new(field.name()).unwrap();
         unsafe {
+            let eq = CStr::from_bytes_with_nul_unchecked(b"=\0");
             dlt_user_log_write_string(&mut self.0, name.as_ptr());
-            dlt_user_log_write_string(&mut self.0, CString::new("=").unwrap().as_ptr());
+            dlt_user_log_write_string(&mut self.0, eq.as_ptr());
             dlt_user_log_write_bool(&mut self.0, value as u8);
         }
     }
@@ -170,23 +162,26 @@ impl tracing::field::Visit for DltVisitor {
       
         let s = CString::new(value).unwrap();
         let name=CString::new(field.name()).unwrap();
+        
         unsafe {
+            let eq = CStr::from_bytes_with_nul_unchecked(b"=\0");
             dlt_user_log_write_string(&mut self.0, name.as_ptr());
-            dlt_user_log_write_string(&mut self.0, CString::new("=").unwrap().as_ptr());
+            dlt_user_log_write_string(&mut self.0, eq.as_ptr());
             dlt_user_log_write_string(&mut self.0, s.as_ptr());
         }
 
     }
 
-    fn record_error(
-        &mut self,
-        field: &tracing::field::Field,
-        value: &(dyn std::error::Error + 'static),
-    ) {
-        println!("  field={} value={}", field.name(), value)
-    }
-
     fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
-        println!("  field={} value={:?}", field.name(), value)
+        //println!("  field={} value={:?}", field.name(), &value);
+        let name=CString::new(field.name()).unwrap();
+        let text = CString::new(format!("{:?}",value)).unwrap();
+        unsafe {
+            let eq = CStr::from_bytes_with_nul_unchecked(b"=\0");
+            dlt_user_log_write_string(&mut self.0, name.as_ptr());
+            dlt_user_log_write_string(&mut self.0, eq.as_ptr());
+            dlt_user_log_write_string(&mut self.0, text.as_ptr());
+
+        }
     }
 }
