@@ -12,7 +12,8 @@ pub struct DltLayer(AsyncIncrement<ContextId>);
 impl DltLayer {
     pub fn new(app_id:&str, description:&str) -> Self {
         let app_id = CString::new(app_id).unwrap();
-        unsafe{dlt_register_app(app_id.as_ptr(),CString::new(description).unwrap().as_ptr())};
+        let description = CString::new(description).unwrap();
+        unsafe{dlt_register_app(app_id.as_ptr(),description.as_ptr())};
         Self(ContextId::init())
 
     }
@@ -47,7 +48,7 @@ impl<S> Layer<S> for DltLayer where S : tracing::Subscriber +  for<'a> LookupSpa
 
     fn on_new_span(
         &self,
-        attrs: &tracing::span::Attributes<'_>,
+        _attrs: &tracing::span::Attributes<'_>,
         id: &tracing::span::Id,
         ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {

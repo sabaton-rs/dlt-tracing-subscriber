@@ -3,7 +3,7 @@ use tracing_subscriber::prelude::*;
 
 mod dlt_layer;
 
-
+pub use dlt_layer::DltLayer;
 
 #[cfg(test)]
 mod tests {
