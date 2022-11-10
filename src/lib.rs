@@ -1,10 +1,11 @@
-
 mod dlt_layer;
 
 pub use dlt_layer::DltLayer;
 
 #[cfg(test)]
 mod tests {
+    use tracing::info;
+    use tracing_subscriber::prelude::*;
     use super::*;
     use dlt_layer::DltLayer;
     use tracing::{info_span, debug_span, error_span};
