@@ -35,13 +35,14 @@ impl<S> Layer<S> for DltLayer where S : tracing::Subscriber +  for<'a> LookupSpa
         event: &tracing::Event<'_>,
         ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {
-        let mut scope = ctx.event_scope(event).unwrap();
-        
-        if let Some(span) = scope.next() {
-            let mut extensions = span.extensions_mut();
-            let storage = extensions.get_mut::<CustomFieldStorage>().unwrap();
-            if let Some(mut visitor) = DltVisitor::new(*span.metadata().level(),&mut storage.0) {
-                event.record(&mut visitor);
+        if let Some(mut scope) = ctx.event_scope(event) {
+            if let Some(span) = scope.next() {
+                let mut extensions = span.extensions_mut();
+                if let Some(storage) = extensions.get_mut::<CustomFieldStorage>() {
+                    if let Some(mut visitor) = DltVisitor::new(*span.metadata().level(),&mut storage.0) {
+                        event.record(&mut visitor);
+                    }
+                }
             }
         }
     }
@@ -61,15 +62,20 @@ impl<S> Layer<S> for DltLayer where S : tracing::Subscriber +  for<'a> LookupSpa
 
         // Create a new DltContext
         let mut dlt_context = DltContext::new_uninitialized();
-        let context_id = CString::new(format!("{}",self.0.pull().0)).unwrap();
-        let description = CString::new(span.metadata().name()).unwrap();
-        let storage = unsafe{
-            dlt_register_context(dlt_context.as_mut_ptr(), context_id.as_ptr(), description.as_ptr());
-            CustomFieldStorage(dlt_context.assume_init())
-        };
-
-        // And store our data
-        extensions.insert::<CustomFieldStorage>(storage);
+        
+        if let (Ok(context_id),Ok(description)) = (
+            CString::new(format!("{}",self.0.pull().0)),
+            CString::new(span.metadata().name())
+        ) {
+            let storage = unsafe{
+                dlt_register_context(dlt_context.as_mut_ptr(), context_id.as_ptr(), description.as_ptr());
+                CustomFieldStorage(dlt_context.assume_init())
+            };
+    
+            // And store our data
+            extensions.insert::<CustomFieldStorage>(storage);
+        }
+       
     }
     
 }

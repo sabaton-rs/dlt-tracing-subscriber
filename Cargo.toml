@@ -1,6 +1,6 @@
 [package]
 name = "dlt-tracing-subscriber"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Sojan James <Sojan.James@gmail.com>"]
 description = "Tracing subscriber for COVESA DLT"
